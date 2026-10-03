@@ -1,0 +1,31 @@
+name: Write daily diary
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate today's entry
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python generate_diary.py
+
+      - name: Commit diary.json
+        run: |
+          git config user.name "diary-bot"
+          git config user.email "diary-bot@users.noreply.github.com"
+          git add diary.json
+          git diff --staged --quiet || (git commit -m "diary: $(date -u +%F)" && git push)
